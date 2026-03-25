@@ -1,0 +1,14 @@
+## .NET
+bin/
+obj/
+*.user
+
+## Settings (contains API key)
+settings.json
+
+## IDE
+.vs/
+*.suo
+
+## Claude
+.claude/
