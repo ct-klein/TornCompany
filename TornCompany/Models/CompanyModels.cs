@@ -57,7 +57,13 @@ public sealed class Company
     public long DirectorLastActionTimestamp { get; set; }
 }
 
-public sealed class UserProfileResponse
+public sealed class UserProfileV2Response
+{
+    [JsonPropertyName("profile")]
+    public UserProfile? Profile { get; set; }
+}
+
+public sealed class UserProfile
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;

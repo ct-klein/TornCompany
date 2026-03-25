@@ -25,11 +25,12 @@ public sealed class TornApiService : IDisposable
         return await FetchAsync<CompanyListResponse>(url, cancellationToken);
     }
 
-    public async Task<UserProfileResponse?> GetUserProfileAsync(
+    public async Task<UserProfile?> GetUserProfileAsync(
         int userId, string apiKey, CancellationToken cancellationToken = default)
     {
-        var url = $"https://api.torn.com/user/{userId}?selections=profile&key={apiKey}";
-        return await FetchAsync<UserProfileResponse>(url, cancellationToken);
+        var url = $"https://api.torn.com/v2/user/{userId}?key={apiKey}";
+        var response = await FetchAsync<UserProfileV2Response>(url, cancellationToken);
+        return response?.Profile;
     }
 
     private async Task<T?> FetchAsync<T>(
