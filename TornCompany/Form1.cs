@@ -21,6 +21,7 @@ public partial class Form1 : Form
 {
     private readonly TornApiService _apiService = new();
     private readonly SettingsService _settings = new();
+    private readonly AppliedService _applied = new();
     private CancellationTokenSource? _cts;
     private List<Company> _allCompanies = new();
 
@@ -28,6 +29,7 @@ public partial class Form1 : Form
     {
         InitializeComponent();
         _settings.Load();
+        _applied.Load();
         if (!string.IsNullOrEmpty(_settings.ApiKey))
         {
             txtApiKey.Text = _settings.ApiKey;
@@ -116,7 +118,7 @@ public partial class Form1 : Form
 
             var withOpenings = _allCompanies
                 .Where(c => c.Openings > 0 && c.Rating == selectedRating)
-                .OrderByDescending(c => c.Openings)
+                .OrderByDescending(c => c.DailyIncome)
                 .ToList();
 
             // Fetch director profiles for companies with openings
@@ -206,6 +208,30 @@ public partial class Form1 : Form
 
         if (dgvCompanies.Columns.Count > 0)
         {
+            // Mark all bound columns read-only; only Applied checkbox is editable
+            foreach (DataGridViewColumn col in dgvCompanies.Columns)
+                col.ReadOnly = true;
+
+            // Add Applied checkbox column if not present
+            if (dgvCompanies.Columns["Applied"] is null)
+            {
+                var chkCol = new DataGridViewCheckBoxColumn
+                {
+                    Name = "Applied",
+                    HeaderText = "Applied",
+                    FillWeight = 45,
+                    DisplayIndex = 0,
+                    SortMode = DataGridViewColumnSortMode.NotSortable,
+                    ReadOnly = false
+                };
+                dgvCompanies.Columns.Add(chkCol);
+            }
+            else
+            {
+                dgvCompanies.Columns["Applied"]!.ReadOnly = false;
+            }
+
+            ConfigureColumn("Applied", "Applied", 45);
             ConfigureColumn("Name", "Company Name", 140);
             ConfigureColumn("Type", "Type", 110);
             ConfigureColumn("Rating", "Rating", 50, DataGridViewContentAlignment.MiddleCenter);
@@ -220,7 +246,15 @@ public partial class Form1 : Form
             ConfigureColumn("DailyCustomers", "Daily Customers", 75,
                 DataGridViewContentAlignment.MiddleCenter);
             ConfigureColumn("Id", "ID", 45);
+
+            // Restore applied state for each row
+            foreach (DataGridViewRow row in dgvCompanies.Rows)
+            {
+                var name = row.Cells["Name"].Value as string ?? string.Empty;
+                row.Cells["Applied"].Value = _applied.IsApplied(name);
+            }
         }
+
     }
 
     private void DgvCompanies_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
@@ -268,9 +302,26 @@ public partial class Form1 : Form
         BindGrid(withOpenings);
     }
 
+    private void DgvCompanies_CellContentClick(object? sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0)
+            return;
+        if (dgvCompanies.Columns[e.ColumnIndex].Name != "Applied")
+            return;
+
+        // Commit the edit so the cell value is updated, then read and persist it
+        dgvCompanies.CommitEdit(DataGridViewDataErrorContexts.Commit);
+        var isChecked = dgvCompanies.Rows[e.RowIndex].Cells[e.ColumnIndex].Value is true;
+        var name = dgvCompanies.Rows[e.RowIndex].Cells["Name"].Value as string ?? string.Empty;
+        _applied.SetApplied(name, isChecked);
+    }
+
     private void DgvCompanies_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
     {
         if (e.RowIndex < 0 || dgvCompanies.Columns["Id"] is null)
+            return;
+
+        if (dgvCompanies.Columns[e.ColumnIndex].Name == "Applied")
             return;
 
         var id = dgvCompanies.Rows[e.RowIndex].Cells["Id"].Value;

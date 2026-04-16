@@ -137,7 +137,7 @@ partial class Form1
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
-            ReadOnly = true,
+            ReadOnly = false,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             RowHeadersVisible = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
@@ -145,6 +145,7 @@ partial class Form1
         };
         dgvCompanies.ColumnHeaderMouseClick += DgvCompanies_ColumnHeaderMouseClick;
         dgvCompanies.CellDoubleClick += DgvCompanies_CellDoubleClick;
+        dgvCompanies.CellContentClick += DgvCompanies_CellContentClick;
 
         // Bottom Panel
         var bottomPanel = new Panel
